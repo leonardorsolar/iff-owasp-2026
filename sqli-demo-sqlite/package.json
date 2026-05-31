@@ -1,0 +1,13 @@
+{
+  "name": "sqli-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "banco":      "node criar-banco.js",
+    "vulneravel": "node vulneravel.js",
+    "seguro":     "node seguro.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.6.0",
+    "express": "^4.19.2"
+  }
+}

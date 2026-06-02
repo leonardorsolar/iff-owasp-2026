@@ -7,7 +7,7 @@
     "seguro":     "node seguro.js"
   },
   "dependencies": {
-    "better-sqlite3": "^9.6.0",
-    "express": "^4.19.2"
+    "better-sqlite3": "^12.10.0",
+    "express": "^4.22.2"
   }
 }
